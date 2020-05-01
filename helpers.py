@@ -96,3 +96,23 @@ def get_elders_hosp_share(raw_data, *, age_set=None, rolling=1):
     )
 
     return data_[['elders corona hosp. share']]
+
+
+def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3, rolling_param=7):
+    plt.figure(figsize=figsize)
+
+    for key, dep_set in dep_mapping.items():
+        data_by_age_ = data_by_age[data_by_age['dep'].isin(dep_set)].copy()
+        data_elders_hosp_share = get_elders_hosp_share(data_by_age_, rolling=rolling_param)
+        data_elders_hosp_share = data_elders_hosp_share[
+            (data_elders_hosp_share.index.month>=month_min) & (data_elders_hosp_share.index.day>rolling_param)
+        ]
+        plot_ = plt.plot(data_elders_hosp_share['elders corona hosp. share'], label=key)[0]
+        for p in ['top', 'right']:
+            plot_.axes.spines[p].set_visible(False)
+
+    plt.xticks(rotation=90)
+    plt.axes().xaxis.set_major_locator(mdates.DayLocator(interval=3))
+    plt.title(label='elders (>75 years old) corona hospitalization share (' + str(rolling_param) + ' days rolling sum)')
+    plt.legend(loc='bottom left', frameon=False)
+    plt.show();
