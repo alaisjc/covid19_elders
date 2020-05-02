@@ -236,3 +236,22 @@ def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3
     plt.title(label='elders (>75 years old) corona hospitalization share (' + str(rolling_param) + ' days rolling sum)')
     plt.legend(loc='bottom left', frameon=False)
     plt.show();
+
+
+def plotting_figure_from_df(data, title='', *, figsize=None, legend=None):
+    if figsize is None:
+        ax = data.plot()
+    else:
+        ax = data.plot(figsize=figsize)
+    
+    configure_plotting(ax, spines_set_exclusion=['top', 'right'])
+
+    plt.xticks(rotation=90)
+    plt.axes().xaxis.set_major_locator(mdates.DayLocator(interval=1))
+    plt.title(label=title)
+    if legend is None:
+        plt.legend(frameon=False)
+    else:
+        plt.legend(loc=legend, frameon=False)
+    
+    plt.show()
