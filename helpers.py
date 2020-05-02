@@ -3,6 +3,9 @@ import github
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import seaborn as sns
+sns.set()
+sns.set_style("white")
 
 plt.style.use(['default'])
 plt.rcParams['font.size'] = 12
@@ -209,7 +212,9 @@ def plot_covid_19_time_series(data, country_set, *, label='death rate', unit='',
         bing_data_country_ = bing_data_country[bing_data_country.index.month >= month_min]
         bing_data_country_ = bing_data_country_.rolling(rolling_param, min_periods=1).mean()
 
-        ax_country = plt.plot(bing_data_country_[label], label=country)[0]
+        # ax_country = plt.plot(bing_data_country_[label], label=country)[0]
+        ax_country = sns.lineplot(data=bing_data_country_[label], label=country)
+
         configure_plotting(ax_country, spines_set_exclusion=['top', 'right'])
     
     if unit is not None:
@@ -232,7 +237,8 @@ def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3
         data_elders_hosp_share = data_elders_hosp_share[
             (data_elders_hosp_share.index.month>=month_min) & (data_elders_hosp_share.index.day>rolling_param)
         ]
-        plot_ = plt.plot(data_elders_hosp_share['elders corona hosp. share'], label=key)[0]
+        # plot_ = plt.plot(data_elders_hosp_share['elders corona hosp. share'], label=key)[0]
+        plot_ = sns.lineplot(data=data_elders_hosp_share['elders corona hosp. share'], label=key)
         configure_plotting(plot_, spines_set_exclusion=['top', 'right'])
 
     plt.xticks(rotation=90)
@@ -243,11 +249,14 @@ def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3
 
 
 def plotting_figure_from_df(data, title='', *, figsize=None, legend=None):
-    if figsize is None:
-        ax = data.plot()
+    if figsize is not None:
+        plt.figure(figsize=figsize)
     else:
-        ax = data.plot(figsize=figsize)
+        plt.figure()
     
+    # ax = plt.plot(data, label=data.columns)[0]
+    ax = sns.lineplot(data=data).set(title=title)[0]
+
     configure_plotting(ax, spines_set_exclusion=['top', 'right'])
 
     plt.xticks(rotation=90)
