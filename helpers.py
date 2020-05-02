@@ -82,6 +82,65 @@ def get_covid_19_data(date_param=None, *, min_cases=0, ref_country=None, add_map
     return data_by_country_
 
 
+def get_covid_19_data_france(min_cases=None):
+    # Loading the opencovid19-fr dataset
+    data_gouv_France = pd.read_csv("https://raw.githubusercontent.com/opencovid19-fr/data/master/dist/chiffres-cles.csv")
+
+    # Selecting the Ministère de la Santé dataset which includes the so-called EHPAD
+    data_gouv_France_ephad = data_gouv_France[
+                (data_gouv_France['granularite']=='pays') & 
+                (data_gouv_France['source_type']=='ministere-sante')]
+
+    # Selecting the Agences Régionales de Santé dataset
+    data_gouv_France = data_gouv_France[
+                (data_gouv_France['granularite']=='region') & 
+                (data_gouv_France['source_type']=='agences-regionales-sante')]
+
+    selection_set = ['date', 'maille_nom', 'deces', 'deces_ehpad', 'cas_confirmes', 'cas_confirmes_ehpad']
+
+    # Ministère de la Santé dataset
+    data_gouv_France_ephad = data_gouv_France_ephad[selection_set].copy()
+    if min_cases is not None:
+        data_gouv_France_ephad = data_gouv_France_ephad[data_gouv_France_ephad['cas_confirmes'] >= min_cases]
+    
+    # Getting things clearer ("deces" stands for "deces_hospital")
+    data_gouv_France_ephad['deces_hospital'] = data_gouv_France_ephad['deces']
+    data_gouv_France_ephad['deces'] = data_gouv_France_ephad['deces'] + data_gouv_France_ephad['deces_ehpad']
+
+    # Computing the deaths over confirmed cases share
+    data_gouv_France_ephad['death rate'] = (
+        data_gouv_France_ephad['deces'] / data_gouv_France_ephad['cas_confirmes'] * 100.0
+    )
+    data_gouv_France_ephad['death rate (ehpad)'] = (
+        data_gouv_France_ephad['deces_ehpad'] / data_gouv_France_ephad['cas_confirmes_ehpad'] * 100.0
+    )
+    data_gouv_France_ephad['death rate (hospital)'] = (
+        data_gouv_France_ephad['deces_hospital'] / (
+        data_gouv_France_ephad['cas_confirmes'] - data_gouv_France_ephad['cas_confirmes_ehpad']
+        ) * 100.0
+    )
+
+    # Setting the date as the index and filling NA values according to the ffill method
+    data_gouv_France_ephad.set_index('date', drop=True, inplace=True)
+    data_gouv_France_ephad.index = pd.to_datetime(data_gouv_France_ephad.index)
+    data_gouv_France_ephad.fillna(method='ffill', inplace=True)
+
+    # Agences Régionales de Santé dataset
+    data_gouv_France_ = data_gouv_France[selection_set].copy()
+    data_gouv_France_gb = data_gouv_France_.groupby('date')
+    data_gouv_France_deces = data_gouv_France_gb['deces'].sum().reset_index(name='deces')
+    data_gouv_France_confirmes = data_gouv_France_gb['cas_confirmes'].sum().reset_index(name='cas_confirmes')
+    data_gouv_France_all = data_gouv_France_deces.merge(data_gouv_France_confirmes)
+    data_gouv_France_all = data_gouv_France_all[data_gouv_France_all['cas_confirmes'] >= min_cases]
+    # Computing the deaths over confirmed cases share
+    data_gouv_France_all['death rate'] = data_gouv_France_all['deces'] / data_gouv_France_all['cas_confirmes'] * 100.0
+    # Setting the date as the index
+    data_gouv_France_all.set_index('date', drop=True, inplace=True)
+    data_gouv_France_all.index = pd.to_datetime(data_gouv_France_all.index)
+
+    return data_gouv_France_ephad, data_gouv_France_all
+
+
 def get_elders_hosp_share(raw_data, *, age_set=None, rolling=1):
     if age_set is None:
         age_set = ['E']
