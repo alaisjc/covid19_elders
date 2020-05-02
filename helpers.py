@@ -132,7 +132,31 @@ def plot_death_rate(data, date, *, figsize=(23,3)):
     plt.show()
 
 
-def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3, rolling_param=7, plot_date_interval=3):
+def plot_covid_19_time_series(data, country_set, *, label='death rate', unit='', month_min=3, rolling_param=7, figsize=(23,7), plot_date_interval=1):
+    plt.figure(figsize=figsize)
+
+    for country in country_set:
+        bing_data_country = data.loc[country].copy()
+        bing_data_country = bing_data_country.set_index('Updated')
+        bing_data_country.index = pd.to_datetime(bing_data_country.index)
+        bing_data_country_ = bing_data_country[bing_data_country.index.month >= month_min]
+        bing_data_country_ = bing_data_country_.rolling(rolling_param, min_periods=1).mean()
+
+        ax_country = plt.plot(bing_data_country_[label], label=country)[0]
+        configure_plotting(ax_country, spines_set_exclusion=['top', 'right'])
+    
+    if unit is not None:
+        plt.title(label=label + ' (' + unit + ') over time (source: Microsoft Bing dataset)')
+    else:
+        plt.title(label=label + ' over time (source: Microsoft Bing dataset)')
+
+    plt.xticks(rotation=90)
+    plt.axes().xaxis.set_major_locator(mdates.DayLocator(interval=plot_date_interval))
+    plt.legend(loc='upper left', frameon=False)
+    plt.show()
+
+
+def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3, rolling_param=7, plot_date_interval=1):
     plt.figure(figsize=figsize)
 
     for key, dep_set in dep_mapping.items():
