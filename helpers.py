@@ -132,13 +132,17 @@ def get_covid_19_data_france(min_cases=None):
     data_gouv_France_confirmes = data_gouv_France_gb['cas_confirmes'].sum().reset_index(name='cas_confirmes')
     data_gouv_France_all = data_gouv_France_deces.merge(data_gouv_France_confirmes)
     data_gouv_France_all = data_gouv_France_all[data_gouv_France_all['cas_confirmes'] >= min_cases]
+
     # Computing the deaths over confirmed cases share
     data_gouv_France_all['death rate'] = data_gouv_France_all['deces'] / data_gouv_France_all['cas_confirmes'] * 100.0
+
     # Setting the date as the index
     data_gouv_France_all.set_index('date', drop=True, inplace=True)
     data_gouv_France_all.index = pd.to_datetime(data_gouv_France_all.index)
 
-    return data_gouv_France_ephad, data_gouv_France_all
+    data_by_age = pd.read_csv("https://www.data.gouv.fr/fr/datasets/r/eceb9fb4-3ebc-4da3-828d-f5939712600a")
+
+    return data_gouv_France_ephad, data_gouv_France_all, data_by_age
 
 
 def get_elders_hosp_share(raw_data, *, age_set=None, rolling=1):
