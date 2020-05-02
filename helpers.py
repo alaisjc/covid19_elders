@@ -8,7 +8,7 @@ sns.set()
 sns.set_style("white")
 
 plt.style.use(['default'])
-plt.rcParams['font.size'] = 12
+plt.rcParams['font.size'] = 10
 plt.rcParams['lines.linewidth'] = 2
 
 def get_covid_19_data(date_param=None, *, min_cases=0, ref_country=None, add_map=None, round_precision=2):
@@ -244,7 +244,7 @@ def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3
     plt.xticks(rotation=90)
     plt.axes().xaxis.set_major_locator(mdates.DayLocator(interval=plot_date_interval))
     plt.title(label='elders (>75 years old) corona hospitalization share (' + str(rolling_param) + ' days rolling sum)')
-    plt.legend(loc='bottom left', frameon=False)
+    # plt.legend(loc='bottom left', frameon=False)
     plt.show();
 
 
