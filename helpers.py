@@ -1,4 +1,5 @@
 import pandas as pd
+import github
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -7,13 +8,11 @@ plt.style.use(['default'])
 plt.rcParams['font.size'] = 12
 plt.rcParams['lines.linewidth'] = 2
 
-def get_covid_19_data(raw_data, date_param, *, min_cases=0, ref_country=None, add_map=None, round_precision=2):
+def get_covid_19_data(date_param=None, *, min_cases=0, ref_country=None, add_map=None, round_precision=2):
     """ get_covid_19_data method
 
     Parameters
     ----------
-    raw_data : DataFrame
-            Raw covid 19 data
     date_param : str
             The date presribed for the study. Time series retrieved if None
     min : int
@@ -26,9 +25,14 @@ def get_covid_19_data(raw_data, date_param, *, min_cases=0, ref_country=None, ad
     Returns
     -------
     DataFrame
-        The death rate data
+        The covid 19 data and the covid 19 death rate data
 
     """
+
+    for item in github.Github().get_repo("microsoft/Bing-COVID-19-Data").get_contents("data/"):
+        if "csv" in item.name:  # Making the assumption (still ok up to now) that there is one csv only
+            csv_name = item.name
+    raw_data = pd.read_csv("https://raw.githubusercontent.com/microsoft/Bing-COVID-19-Data/master/data/"+csv_name)
 
     selection = ['Country_Region', 'Updated', 'Deaths', 'Recovered', 'Confirmed']
 
