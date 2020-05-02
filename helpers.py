@@ -1,7 +1,13 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
-def get_covid_19_data(raw_data, date_param, *, min_cases=0, ref_country=None, add_map=None):
+plt.style.use(['default'])
+plt.rcParams['font.size'] = 12
+plt.rcParams['lines.linewidth'] = 2
+
+def get_covid_19_data(raw_data, date_param, *, min_cases=0, ref_country=None, add_map=None, round_precision=2):
     """ get_covid_19_data method
 
     Parameters
@@ -55,7 +61,7 @@ def get_covid_19_data(raw_data, date_param, *, min_cases=0, ref_country=None, ad
     data_by_country_['death rate'] = (
         data_by_country_['deaths'] / data_by_country_['confirmed'] * 100.0
         )  # Division by 0 already handled
-    data_by_country_.loc[:, 'death rate'] = data_by_country_['death rate'].apply(lambda x: round(x, 1))
+    data_by_country_.loc[:, 'death rate'] = data_by_country_['death rate'].apply(lambda x: round(x, round_precision))
 
     country_set = list(data_by_country_.index.get_level_values(0))
 
@@ -98,21 +104,48 @@ def get_elders_hosp_share(raw_data, *, age_set=None, rolling=1):
     return data_[['elders corona hosp. share']]
 
 
-def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3, rolling_param=7):
+def configure_plotting(_ax, *, spines_set_exclusion=None, annotate=False, xaxis_visible=True, yaxis_visible=True):
+    if annotate:
+        for p in _ax.patches:
+            _ax.annotate(str(p.get_height()), (p.get_x() * 1.0, p.get_height() + 1.0))
+
+    if spines_set_exclusion is None:
+        spines_set_exclusion = list()
+
+    for p in spines_set_exclusion:
+        _ax.axes.spines[p].set_visible(False)
+    
+    _ax.axes.xaxis.set_visible(xaxis_visible)
+    _ax.axes.yaxis.set_visible(yaxis_visible)
+
+
+def plot_death_rate(data, date, *, figsize=(23,3)):
+    data.sort_values(by='death rate', ascending=False, inplace=True)
+
+    ax = data['death rate'].plot.bar(
+        title='deaths over confirmed cases (%) for countries with 10k confirmed cases or more (on ' + date + ', sources: MS Bing covid 19 dataset & Ministère de la Santé)', 
+        figsize=figsize
+    )
+
+    configure_plotting(ax, spines_set_exclusion=['top', 'left', 'bottom', 'right'], annotate=True, yaxis_visible=False)
+
+    plt.show()
+
+
+def plot_hosp_share_France(data, dep_mapping, *, figsize = (15,7), month_min = 3, rolling_param=7, plot_date_interval=3):
     plt.figure(figsize=figsize)
 
     for key, dep_set in dep_mapping.items():
-        data_by_age_ = data_by_age[data_by_age['dep'].isin(dep_set)].copy()
+        data_by_age_ = data[data['dep'].isin(dep_set)].copy()
         data_elders_hosp_share = get_elders_hosp_share(data_by_age_, rolling=rolling_param)
         data_elders_hosp_share = data_elders_hosp_share[
             (data_elders_hosp_share.index.month>=month_min) & (data_elders_hosp_share.index.day>rolling_param)
         ]
         plot_ = plt.plot(data_elders_hosp_share['elders corona hosp. share'], label=key)[0]
-        for p in ['top', 'right']:
-            plot_.axes.spines[p].set_visible(False)
+        configure_plotting(plot_, spines_set_exclusion=['top', 'right'])
 
     plt.xticks(rotation=90)
-    plt.axes().xaxis.set_major_locator(mdates.DayLocator(interval=3))
+    plt.axes().xaxis.set_major_locator(mdates.DayLocator(interval=plot_date_interval))
     plt.title(label='elders (>75 years old) corona hospitalization share (' + str(rolling_param) + ' days rolling sum)')
     plt.legend(loc='bottom left', frameon=False)
     plt.show();
